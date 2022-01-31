@@ -1,0 +1,749 @@
+#+begin_src jupyter-python
+import plotly.graph_objects as go
+
+#+end_src
+
+#+RESULTS:
+
+#+begin_src jupyter-python
+import matplotlib.pyplot as plt, cmasher as cmr, pandas as pd
+import numpy as np, os, sys, networkx as nx, warnings
+from plexsim import models
+from imi import infcy
+warnings.simplefilter("ignore"); plt.style.use("fivethirtyeight spooky".split())
+
+
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from __future__ import division
+
+import logging
+
+from collections import Counter
+import numpy as np
+import plotly.graph_objs as go
+# import plotly.plotly as py
+
+
+from gensim.models.poincare import PoincareKeyedVectors
+
+
+def space_title(s):
+    for cut in [100, 200, 300, 400]:
+        if len(s) > cut:
+            x = s.find(';', cut) + 1
+            if x > 0:
+                s = s[:x] + '<br>' + s[x:]
+    return s
+
+
+logger = logging.getLogger(__name__)
+
+
+def poincare_2d_visualization(
+        model,
+        animation,
+        epoch,
+        eval_result,
+        avg_loss,
+        avg_pos_loss,
+        avg_neg_loss,
+        tree,
+        figure_title,
+        num_nodes=50,
+        show_node_labels=()):
+    """Create a 2-d plot of the nodes and edges of a 2-d poincare embedding.
+
+    Parameters
+    ----------
+    model : :class:`~hyperbolic.dag_emb_model.DAGEmbeddingModel`
+        The model to visualize, model size must be 2.
+    tree : list
+        Set of tuples containing the direct edges present in the original dataset.
+    figure_title : str
+        Title of the plotted figure.
+    num_nodes : int or None
+        Number of nodes for which edges are to be plotted.
+        If `None`, all edges are plotted.
+        Helpful to limit this in case the data is too large to avoid a messy plot.
+    show_node_labels : iterable
+        Iterable of nodes for which to show labels by default.
+
+    Returns
+    -------
+    :class:`plotly.graph_objs.Figure`
+        Plotly figure that contains plot.
+
+    """
+    vectors = model.kv.syn0
+    if vectors.shape[1] != 2:
+        raise ValueError('Can only plot 2-D vectors')
+
+    node_labels = model.kv.index2word
+    nodes_x = list(vectors[:, 0])
+    nodes_y = list(vectors[:, 1])
+    nodes = dict(
+        x=nodes_x, y=nodes_y,
+        mode='markers',
+        marker=dict(color='rgb(30, 100, 200)'),
+        text=node_labels,
+        textposition='bottom'
+    )
+
+    nodes_x, nodes_y, node_labels = [], [], []
+    for node in show_node_labels:
+        if node in model.kv:
+            vector = model.kv[node]
+            nodes_x.append(vector[0])
+            nodes_y.append(vector[1])
+            node_labels.append(node)
+
+    nodes_with_labels = dict(
+        x=nodes_x, y=nodes_y,
+        mode='markers+text',
+        marker=dict(color='rgb(200, 100, 200)'),
+        text=node_labels,
+        textfont=dict(
+            family='sans serif',
+            size=18,
+            color='#ff7f0e' # orange
+        ),
+        textposition='bottom'
+    )
+
+    node_out_degrees = Counter(hypernym_pair[1] for hypernym_pair in tree)
+    if num_nodes is None:
+        chosen_nodes = list(node_out_degrees.keys())
+    else:
+        chosen_nodes = list(sorted(node_out_degrees.keys(), key=lambda k: -node_out_degrees[k]))[:num_nodes]
+
+    edges_x = []
+    edges_y = []
+    for u, v in tree:
+        if not(u in chosen_nodes or v in chosen_nodes):
+            continue
+        vector_u = model.kv[u]
+        vector_v = model.kv[v]
+        edges_x += [vector_u[0], vector_v[0], None]
+        edges_y += [vector_u[1], vector_v[1], None]
+    edges = dict(
+        x=edges_x, y=edges_y, mode="line", hoverinfo=False,
+        line=dict(color='rgb(50,50,50)', width=1))
+
+    layout = go.Layout(
+        title=figure_title, showlegend=False, hovermode='closest', width=1500, height=1500,
+        xaxis={'range': [-1, 1.3], 'autorange': False},
+        yaxis={'range': [-1, 1.3], 'autorange': False},
+        updatemenus= [{'type': 'buttons',
+                         'buttons': [
+                             {'label': 'Play',
+                              'method': 'animate',
+                              'args': [None]
+                              },
+                              {
+                                 'args': [[None], {'frame': {'duration': 0, 'redraw': False},
+                                                   'mode': 'immediate',
+                                                   'transition': {'duration': 0}}],
+                                 'label': 'Pause',
+                                 'method': 'animate'
+                              }
+                         ]}]
+    )
+
+
+    epoch_sticker = dict(
+        x=[0.5], y = [1.2], mode='text', text=['Epoch : ' + str(epoch)],
+        textfont=dict(
+            family='sans serif',
+            size=20,
+            color='rgb(200,0,0)'
+        ),
+    )
+
+    result_str = str(eval_result) + '<br>'
+    result_str += 'loss = %.2f; pos loss = %.2f; neg loss = %.2f' % (avg_loss, avg_pos_loss, avg_neg_loss)
+
+    eval_result_sticker = dict(
+        x=[0.5], y = [1.1],
+        mode='text',
+        text=[result_str],
+        textfont=dict(
+            family='sans serif',
+            size=20,
+            color='rgb(0,0,200)'
+        ),
+    )
+
+    # Add a new frame into the animation
+    frame = {'data': [], 'name': str(epoch)}
+    frame['data'].append(edges)
+    frame['data'].append(nodes_with_labels)
+    frame['data'].append(eval_result_sticker)
+    frame['data'].append(epoch_sticker)
+    animation['frames'].append(frame)
+
+    if epoch == 0:
+        animation['data'].append(edges)
+        animation['data'].append(nodes_with_labels)
+        animation['data'].append(eval_result_sticker)
+        animation['data'].append(epoch_sticker)
+
+    return go.Figure(data=[edges, nodes, nodes_with_labels, eval_result_sticker, epoch_sticker], layout=layout)
+
+
+def poincare_distance_heatmap(origin_point, x_range=(-1.0, 1.0), y_range=(-1.0, 1.0), num_points=100):
+    """Create a heatmap of Poincare distances from `origin_point` for each point (x, y),
+    where x and y lie in `x_range` and `y_range` respectively, with `num_points` points chosen uniformly in both ranges.
+
+    Parameters
+    ----------
+    origin_point : tuple (int, int)
+        (x, y) from which distances are to be measured and plotted.
+    x_range : tuple (int, int)
+        Range for x-axis from which to choose `num_points` points.
+    y_range : tuple (int, int)
+        Range for y-axis from which to choose `num_points` points.
+    num_points : int
+        Number of points to choose from `x_range` and `y_range`.
+
+    Notes
+    -----
+    Points outside the unit circle are ignored, since the Poincare distance is defined
+    only for points inside the circle boundaries (exclusive of the boundary).
+
+    Returns
+    -------
+    :class:`plotly.graph_objs.Figure`
+        Plotly figure that contains plot
+
+    """
+    epsilon = 1e-8  # Can't choose (-1.0, -1.0) or (1.0, 1.0), distance undefined
+    x_range, y_range = list(x_range), list(y_range)
+    if x_range[0] == -1.0 and y_range[0] == -1.0:
+        x_range[0] += epsilon
+        y_range[0] += epsilon
+    if x_range[0] == 1.0 and y_range[0] == 1.0:
+        x_range[0] -= epsilon
+        y_range[0] -= epsilon
+
+    x_axis_values = np.linspace(x_range[0], x_range[1], num=num_points)
+    y_axis_values = np.linspace(x_range[0], x_range[1], num=num_points)
+    x, y = np.meshgrid(x_axis_values, y_axis_values)
+    all_points = np.dstack((x, y)).swapaxes(1, 2).swapaxes(0, 1).reshape(2, num_points ** 2).T
+    norms = np.linalg.norm(all_points, axis=1)
+    all_points = all_points[norms < 1]
+
+    origin_point = np.array(origin_point)
+    all_distances = PoincareKeyedVectors.poincare_dists(origin_point, all_points)
+
+    fig, ax = plt.subplots()
+
+    ax.scatter(*all_points.T[:2])
+    ax.scatter(*origin_point)
+    fig.show()
+
+    # distances = go.Scatter(
+    #     x=all_points[:, 0],
+    #     y=all_points[:, 1],
+    #     mode='markers',
+    #     marker=dict(
+    #         size='9',
+    #         color=all_distances,
+    #         colorscale='Viridis',
+    #         showscale=True,
+    #         colorbar=go.ColorBar(
+    #             title='Poincare Distance'
+    #         ),
+    #     ),
+    #     text=[
+    #         'Distance from (%.2f, %.2f): %.2f' % (origin_point[0], origin_point[1], d)
+    #         for d in all_distances],
+    #     name='',  # To avoid the default 'trace 0'
+    # )
+
+    # origin = go.Scatter(
+    #     x=[origin_point[0]],
+    #     y=[origin_point[1]],
+    #     name='Distance from (%.2f, %.2f)' % (origin_point[0], origin_point[1]),
+    #     mode='markers+text',
+    #     marker=dict(
+    #         size='10',
+    #         color='rgb(200, 50, 50)'
+    #     )
+    # )
+
+    # layout = go.Layout(
+    #     width=900,
+    #     height=800,
+    #     showlegend=False,
+    #     title='Poincare Distances from (%.2f, %.2f)' % (origin_point[0], origin_point[1]),
+    #     hovermode='closest',
+    # )
+
+    return fig
+from collections import Counter
+import numpy as np
+def poincare_2d_visualization(
+        model,
+        animation,
+        epoch,
+        eval_result,
+        avg_loss,
+        avg_pos_loss,
+        avg_neg_loss,
+        tree,
+        figure_title,
+        num_nodes=50,
+        show_node_labels=()):
+    """Create a 2-d plot of the nodes and edges of a 2-d poincare embedding.
+    Parameters
+    ----------
+    model : :class:`~hyperbolic.dag_emb_model.DAGEmbeddingModel`
+        The model to visualize, model size must be 2.
+    tree : list
+        Set of tuples containing the direct edges present in the original dataset.
+    figure_title : str
+        Title of the plotted figure.
+    num_nodes : int or None
+        Number of nodes for which edges are to be plotted.
+        If `None`, all edges are plotted.
+        Helpful to limit this in case the data is too large to avoid a messy plot.
+    show_node_labels : iterable
+        Iterable of nodes for which to show labels by default.
+    Returns
+    -------
+    :class:`plotly.graph_objs.Figure`
+        Plotly figure that contains plot.
+    """
+    vectors = model.kv.syn0
+    if vectors.shape[1] != 2:
+        raise ValueError('Can only plot 2-D vectors')
+
+    node_labels = model.kv.index2word
+    nodes_x = list(vectors[:, 0])
+    nodes_y = list(vectors[:, 1])
+    nodes = dict(
+        x=nodes_x, y=nodes_y,
+        mode='markers',
+        marker=dict(color='rgb(30, 100, 200)'),
+        text=node_labels,
+        textposition='bottom'
+    )
+
+    nodes_x, nodes_y, node_labels = [], [], []
+    for node in show_node_labels:
+        if node in model.kv:
+            vector = model.kv[node]
+            nodes_x.append(vector[0])
+            nodes_y.append(vector[1])
+            node_labels.append(node)
+
+    nodes_with_labels = dict(
+        x=nodes_x, y=nodes_y,
+        mode='markers+text',
+        marker=dict(color='rgb(200, 100, 200)'),
+        text=node_labels,
+        textfont=dict(
+            family='sans serif',
+            size=18,
+            color='#ff7f0e' # orange
+        ),
+        textposition='bottom'
+    )
+
+    node_out_degrees = Counter(hypernym_pair[1] for hypernym_pair in tree)
+    if num_nodes is None:
+        chosen_nodes = list(node_out_degrees.keys())
+    else:
+        chosen_nodes = list(sorted(node_out_degrees.keys(), key=lambda k: -node_out_degrees[k]))[:num_nodes]
+
+    edges_x = []
+    edges_y = []
+    for u, v in tree:
+        if not(u in chosen_nodes or v in chosen_nodes):
+            continue
+        vector_u = model.kv[u]
+        vector_v = model.kv[v]
+        edges_x += [vector_u[0], vector_v[0], None]
+        edges_y += [vector_u[1], vector_v[1], None]
+    edges = dict(
+        x=edges_x, y=edges_y, mode="line", hoverinfo=False,
+        line=dict(color='rgb(50,50,50)', width=1))
+
+    layout = go.Layout(
+        title=figure_title, showlegend=False, hovermode='closest', width=1500, height=1500,
+        xaxis={'range': [-1, 1.3], 'autorange': False},
+        yaxis={'range': [-1, 1.3], 'autorange': False},
+        updatemenus= [{'type': 'buttons',
+                         'buttons': [
+                             {'label': 'Play',
+                              'method': 'animate',
+                              'args': [None]
+                              },
+                              {
+                                 'args': [[None], {'frame': {'duration': 0, 'redraw': False},
+                                                   'mode': 'immediate',
+                                                   'transition': {'duration': 0}}],
+                                 'label': 'Pause',
+                                 'method': 'animate'
+                              }
+                         ]}]
+    )
+
+
+    epoch_sticker = dict(
+        x=[0.5], y = [1.2], mode='text', text=['Epoch : ' + str(epoch)],
+        textfont=dict(
+            family='sans serif',
+            size=20,
+            color='rgb(200,0,0)'
+        ),
+    )
+
+    result_str = str(eval_result) + '<br>'
+    result_str += 'loss = %.2f; pos loss = %.2f; neg loss = %.2f' % (avg_loss, avg_pos_loss, avg_neg_loss)
+
+    eval_result_sticker = dict(
+        x=[0.5], y = [1.1],
+        mode='text',
+        text=[result_str],
+        textfont=dict(
+            family='sans serif',
+            size=20,
+            color='rgb(0,0,200)'
+        ),
+    )
+
+    # Add a new frame into the animation
+    frame = {'data': [], 'name': str(epoch)}
+    frame['data'].append(edges)
+    frame['data'].append(nodes_with_labels)
+    frame['data'].append(eval_result_sticker)
+    frame['data'].append(epoch_sticker)
+    animation['frames'].append(frame)
+
+    if epoch == 0:
+        animation['data'].append(edges)
+        animation['data'].append(nodes_with_labels)
+        animation['data'].append(eval_result_sticker)
+        animation['data'].append(epoch_sticker)
+
+    return go.Figure(data=[edges, nodes, nodes_with_labels, eval_result_sticker, epoch_sticker], layout=layout)
+
+g = nx.karate_club_graph()
+edges = list(g.edges())
+from gensim.models.poincare import PoincareModel
+new_model = PoincareModel(train_data = edges,
+                          size = 2,
+                          burn_in = 0,
+                          workers = 1,
+                          negative = 10)
+poincare_2d_visualization(new_model, )
+
+#+end_src
+
+#+RESULTS:
+
+
+
+
+
+
+#+begin_src jupyter-python
+import logging
+import matplotlib.pyplot as plt
+
+import geomstats.backend as gs
+import geomstats.visualization as visualization
+
+from geomstats.datasets.utils import load_karate_graph
+from geomstats.geometry.poincare_ball import PoincareBall
+
+
+def grad_squared_distance(point_a, point_b):
+    """Gradient of squared hyperbolic distance.
+
+    Gradient of the squared distance based on the
+    Ball representation according to point_a
+
+    Parameters
+    ----------
+    point_a : array-like, shape=[n_samples, dim]
+        First point in hyperbolic space.
+    point_b : array-like, shape=[n_samples, dim]
+        Second point in hyperbolic space.
+
+    Returns
+    -------
+    dist : array-like, shape=[n_samples, 1]
+        Geodesic squared distance between the two points.
+    """
+    hyperbolic_metric = PoincareBall(2).metric
+    log_map = hyperbolic_metric.log(point_b, point_a)
+
+    return -2 * log_map
+
+def log_sigmoid(vector):
+    """Logsigmoid function.
+
+    Apply log sigmoid function
+
+    Parameters
+    ----------
+    vector : array-like, shape=[n_samples, dim]
+
+    Returns
+    -------
+    result : array-like, shape=[n_samples, dim]
+    """
+    return gs.log((1 / (1 + gs.exp(-vector))))
+
+def grad_log_sigmoid(vector):
+    """Gradient of log sigmoid function.
+
+    Parameters
+    ----------
+    vector : array-like, shape=[n_samples, dim]
+
+    Returns
+    -------
+    gradient : array-like, shape=[n_samples, dim]
+    """
+    return 1 / (1 + gs.exp(vector))
+
+def loss(example_embedding, context_embedding, negative_embedding,
+         manifold):
+    """Compute loss and grad.
+
+    Compute loss and grad given embedding of the current example,
+    embedding of the context and negative sampling embedding.
+    """
+    n_edges, dim =\
+        negative_embedding.shape[0], example_embedding.shape[-1]
+    example_embedding = gs.expand_dims(example_embedding, 0)
+    context_embedding = gs.expand_dims(context_embedding, 0)
+    positive_distance =\
+        manifold.metric.squared_dist(
+            example_embedding, context_embedding)
+    positive_loss =\
+        log_sigmoid(-positive_distance)
+
+    reshaped_example_embedding =\
+        gs.repeat(example_embedding, n_edges, axis=0)
+    negative_distance =\
+        manifold.metric.squared_dist(
+            reshaped_example_embedding, negative_embedding)
+    negative_loss = log_sigmoid(negative_distance)
+
+    total_loss = -(positive_loss + negative_loss.sum())
+
+    positive_log_sigmoid_grad =\
+        -grad_log_sigmoid(-positive_distance)
+
+    positive_distance_grad =\
+        grad_squared_distance(example_embedding, context_embedding)
+
+    positive_grad =\
+        gs.repeat(positive_log_sigmoid_grad, dim, axis=-1)\
+        ,* positive_distance_grad
+
+    negative_distance_grad =\
+        grad_squared_distance(reshaped_example_embedding, negative_embedding)
+
+    negative_distance = gs.to_ndarray(negative_distance,
+                                      to_ndim=2, axis=-1)
+    negative_log_sigmoid_grad =\
+        grad_log_sigmoid(negative_distance)
+
+    negative_grad = negative_log_sigmoid_grad\
+        ,* negative_distance_grad
+    example_grad = -(positive_grad + negative_grad.sum(axis=0))
+
+    return total_loss, example_grad
+
+#+end_src
+
+#+RESULTS:
+: INFO: Number of vertices: 34
+: INFO: Mean edge-vertex ratio: 4.588235294117647
+
+
+#+begin_src jupyter-python
+gs.random.seed(1234)
+dim = 3
+max_epochs = 10
+lr = .05
+n_negative = 2
+context_size = 1
+karate_graph = load_karate_graph()
+hyperbolic_manifold = PoincareBall(2)
+
+nb_vertices_by_edges =\
+    [len(e_2) for _, e_2 in karate_graph.edges.items()]
+logging.info('Number of vertices: %s', len(karate_graph.edges))
+logging.info(
+    'Mean edge-vertex ratio: %s',
+    (sum(nb_vertices_by_edges, 0) / len(karate_graph.edges)))
+embeddings = gs.random.normal(size=(karate_graph.n_nodes, dim))
+embeddings = embeddings * 0.2
+random_walks = karate_graph.random_walk()
+
+random_walks = karate_graph.random_walk()
+
+negative_table_parameter = 5
+negative_sampling_table = []
+
+for i, nb_v in enumerate(nb_vertices_by_edges):
+    negative_sampling_table +=\
+        ([i] * int((nb_v**(3. / 4.))) * negative_table_parameter)
+
+negative_sampling_table = gs.array(negative_sampling_table)
+for epoch in range(max_epochs):
+    total_loss = []
+    for path in random_walks:
+
+        for example_index, one_path in enumerate(path):
+            context_index = path[max(0, example_index - context_size):
+                                 min(example_index + context_size,
+                                 len(path))]
+            negative_index =\
+                gs.random.randint(negative_sampling_table.shape[0],
+                                  size=(len(context_index),
+                                  n_negative))
+            negative_index = negative_sampling_table[negative_index]
+
+            example_embedding = embeddings[one_path]
+            for one_context_i, one_negative_i in zip(context_index,
+                                                     negative_index):
+                context_embedding = embeddings[one_context_i]
+                negative_embedding = embeddings[one_negative_i]
+                l, g_ex = loss(
+                    example_embedding,
+                    context_embedding,
+                    negative_embedding,
+                    hyperbolic_manifold)
+                total_loss.append(l)
+
+                example_to_update = embeddings[one_path]
+                embeddings[one_path] = hyperbolic_manifold.metric.exp(
+                    -lr * g_ex, example_to_update)
+    logging.info(
+        'iteration %d loss_value %f\r',
+        epoch, sum(total_loss, 0) / len(total_loss))
+
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+: INFO: Number of vertices: 34
+: INFO: Mean edge-vertex ratio: 4.588235294117647
+# [goto error]
+#+begin_example
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mNameError[0m                                 Traceback (most recent call last)
+Input [0;32mIn [51][0m, in [0;36m<module>[0;34m[0m
+[1;32m     47[0m context_embedding [38;5;241m=[39m embeddings[one_context_i]
+[1;32m     48[0m negative_embedding [38;5;241m=[39m embeddings[one_negative_i]
+[0;32m---> 49[0m l, g_ex [38;5;241m=[39m [43mloss[49m[43m([49m
+[1;32m     50[0m [43m    [49m[43mexample_embedding[49m[43m,[49m
+[1;32m     51[0m [43m    [49m[43mcontext_embedding[49m[43m,[49m
+[1;32m     52[0m [43m    [49m[43mnegative_embedding[49m[43m,[49m
+[1;32m     53[0m [43m    [49m[43mhyperbolic_manifold[49m[43m)[49m
+[1;32m     54[0m total_loss[38;5;241m.[39mappend(l)
+[1;32m     56[0m example_to_update [38;5;241m=[39m embeddings[one_path]
+
+Input [0;32mIn [36][0m, in [0;36mloss[0;34m(example_embedding, context_embedding, negative_embedding, manifold)[0m
+[1;32m     78[0m example_embedding [38;5;241m=[39m gs[38;5;241m.[39mexpand_dims(example_embedding, [38;5;241m0[39m)
+[1;32m     79[0m context_embedding [38;5;241m=[39m gs[38;5;241m.[39mexpand_dims(context_embedding, [38;5;241m0[39m)
+[1;32m     80[0m positive_distance [38;5;241m=[39m\
+[0;32m---> 81[0m     [43mmanifold[49m[38;5;241;43m.[39;49m[43mmetric[49m[38;5;241;43m.[39;49m[43msquared_dist[49m[43m([49m
+[1;32m     82[0m [43m        [49m[43mexample_embedding[49m[43m,[49m[43m [49m[43mcontext_embedding[49m[43m)[49m
+[1;32m     83[0m positive_loss [38;5;241m=[39m\
+[1;32m     84[0m     log_sigmoid([38;5;241m-[39mpositive_distance)
+[1;32m     86[0m reshaped_example_embedding [38;5;241m=[39m\
+[1;32m     87[0m     gs[38;5;241m.[39mrepeat(example_embedding, n_edges, axis[38;5;241m=[39m[38;5;241m0[39m)
+
+File [0;32m~/miniconda3/lib/python3.9/site-packages/geomstats/geometry/riemannian_metric.py:215[0m, in [0;36mRiemannianMetric.squared_dist[0;34m(self, point_a, point_b, **kwargs)[0m
+[1;32m    200[0m [38;5;28;01mdef[39;00m [38;5;21msquared_dist[39m([38;5;28mself[39m, point_a, point_b, [38;5;241m*[39m[38;5;241m*[39mkwargs):
+[1;32m    201[0m     [38;5;124;03m"""Squared geodesic distance between two points.[39;00m
+[1;32m    202[0m
+[1;32m    203[0m [38;5;124;03m    Parameters[39;00m
+[0;32m   (...)[0m
+[1;32m    213[0m [38;5;124;03m        Squared distance.[39;00m
+[1;32m    214[0m [38;5;124;03m    """[39;00m
+[0;32m--> 215[0m     log [38;5;241m=[39m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mlog[49m[43m([49m[43mpoint[49m[38;5;241;43m=[39;49m[43mpoint_b[49m[43m,[49m[43m [49m[43mbase_point[49m[38;5;241;43m=[39;49m[43mpoint_a[49m[43m,[49m[43m [49m[38;5;241;43m*[39;49m[38;5;241;43m*[39;49m[43mkwargs[49m[43m)[49m
+[1;32m    217[0m     sq_dist [38;5;241m=[39m [38;5;28mself[39m[38;5;241m.[39msquared_norm(vector[38;5;241m=[39mlog, base_point[38;5;241m=[39mpoint_a)
+[1;32m    218[0m     [38;5;28;01mreturn[39;00m sq_dist
+
+File [0;32m~/miniconda3/lib/python3.9/site-packages/geomstats/geometry/poincare_ball.py:171[0m, in [0;36mPoincareBallMetric.log[0;34m(self, point, base_point, **kwargs)[0m
+[1;32m    155[0m [38;5;28;01mdef[39;00m [38;5;21mlog[39m([38;5;28mself[39m, point, base_point, [38;5;241m*[39m[38;5;241m*[39mkwargs):
+[1;32m    156[0m     [38;5;124;03m"""Compute Riemannian logarithm of a point wrt a base point.[39;00m
+[1;32m    157[0m
+[1;32m    158[0m [38;5;124;03m    Parameters[39;00m
+[0;32m   (...)[0m
+[1;32m    169[0m [38;5;124;03m        of point at the base point.[39;00m
+[1;32m    170[0m [38;5;124;03m    """[39;00m
+[0;32m--> 171[0m     mobius_addition [38;5;241m=[39m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mmobius_add[49m[43m([49m[38;5;241;43m-[39;49m[43mbase_point[49m[43m,[49m[43m [49m[43mpoint[49m[43m)[49m
+[1;32m    172[0m     squared_norm_add [38;5;241m=[39m gs[38;5;241m.[39msum(mobius_addition [38;5;241m*[39m[38;5;241m*[39m [38;5;241m2[39m, axis[38;5;241m=[39m[38;5;241m-[39m[38;5;241m1[39m)
+[1;32m    173[0m     squared_norm_bp [38;5;241m=[39m gs[38;5;241m.[39msum(base_point [38;5;241m*[39m[38;5;241m*[39m [38;5;241m2[39m, axis[38;5;241m=[39m[38;5;241m-[39m[38;5;241m1[39m)
+
+File [0;32m~/miniconda3/lib/python3.9/site-packages/geomstats/geometry/poincare_ball.py:207[0m, in [0;36mPoincareBallMetric.mobius_add[0;34m(self, point_a, point_b, project_first)[0m
+[1;32m    205[0m ball_manifold [38;5;241m=[39m PoincareBall([38;5;28mself[39m[38;5;241m.[39mdim, scale[38;5;241m=[39m[38;5;28mself[39m[38;5;241m.[39mscale)
+[1;32m    206[0m [38;5;28;01mif[39;00m project_first:
+[0;32m--> 207[0m     point_a [38;5;241m=[39m [43mball_manifold[49m[38;5;241;43m.[39;49m[43mprojection[49m[43m([49m[43mpoint_a[49m[43m)[49m
+[1;32m    208[0m     point_b [38;5;241m=[39m ball_manifold[38;5;241m.[39mprojection(point_b)
+[1;32m    209[0m [38;5;28;01melse[39;00m:
+
+File [0;32m~/miniconda3/lib/python3.9/site-packages/geomstats/geometry/poincare_ball.py:88[0m, in [0;36mPoincareBall.projection[0;34m(self, point)[0m
+[1;32m     72[0m [38;5;124;03m"""Project a point on the ball.[39;00m
+[1;32m     73[0m
+[1;32m     74[0m [38;5;124;03mProject a point by clipping such that l2[39;00m
+[0;32m   (...)[0m
+[1;32m     85[0m [38;5;124;03m    Point projected on the ball.[39;00m
+[1;32m     86[0m [38;5;124;03m"""[39;00m
+[1;32m     87[0m [38;5;28;01mif[39;00m point[38;5;241m.[39mshape[[38;5;241m-[39m[38;5;241m1[39m] [38;5;241m!=[39m [38;5;28mself[39m[38;5;241m.[39mdim:
+[0;32m---> 88[0m     [38;5;28;01mraise[39;00m [38;5;167;01mNameError[39;00m([38;5;124m"[39m[38;5;124mWrong dimension, expected [39m[38;5;124m"[39m, [38;5;28mself[39m[38;5;241m.[39mdim)
+[1;32m     90[0m l2_norm [38;5;241m=[39m gs[38;5;241m.[39mlinalg[38;5;241m.[39mnorm(point, axis[38;5;241m=[39m[38;5;241m-[39m[38;5;241m1[39m)
+[1;32m     91[0m [38;5;28;01mif[39;00m gs[38;5;241m.[39many(l2_norm [38;5;241m>[39m[38;5;241m=[39m [38;5;241m1[39m [38;5;241m-[39m gs[38;5;241m.[39matol):
+
+[0;31mNameError[0m: ('Wrong dimension, expected ', 2)
+#+end_example
+:END:
+
+#+begin_src jupyter-python
+import matplotlib.patches as mpatches
+
+colors = {1: 'b', 2: 'r'}
+group_1 = mpatches.Patch(color=colors[1], label='Group 1')
+group_2 = mpatches.Patch(color=colors[2], label='Group 2')
+
+circle = visualization.PoincareDisk(point_type='ball')
+
+fig, ax = plt.subplots(figsize=(8, 8))
+ax.axes.xaxis.set_visible(False)
+ax.axes.yaxis.set_visible(False)
+circle.set_ax(ax)
+circle.draw(ax=ax)
+for i_embedding, embedding in enumerate(embeddings):
+    x = embedding[0]
+    y = embedding[1]
+    pt_id = i_embedding
+    plt.scatter(
+        x, y,
+        c=colors[karate_graph.labels[pt_id][0]],
+        s = 150
+        )
+    ax.annotate(pt_id, (x,y))
+
+plt.tick_params(
+which='both')
+plt.title('Poincare Ball Embedding of the Karate Club Network')
+plt.legend(handles=[group_1, group_2])
+plt.show()
+
+
+#+end_src
+
+#+RESULTS:
+[[file:./.ob-jupyter/887be7855a34bbca11998533d3747c2c0a8ab6bb.png]]

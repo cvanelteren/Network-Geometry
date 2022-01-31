@@ -1,0 +1,67 @@
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=
+# Embedding started at:  2022/01/27 17:54 UTC
+# Ended at:              2022/01/27 17:54 UTC
+# Elapsed CPU time:      1.53645 seconds
+# Edgelist file:         /Users/choudhryshuaib/Dropbox/My Mac (Choudhry’s MacBook Pro)/Downloads/pp_edgelist
+#
+# Parameters
+#   - nb. vertices:      20
+#   - beta:              3.93393
+#   - mu:                0.106791
+#   - radius_S1:         3.1831
+#   - radius_H2:         5.80604
+#   - kappa_min:         1.80838
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=
+#        Vertex       Inf.Kappa       Inf.Theta    Inf.Hyp.Rad. 
+              0         3.81913          2.9499         4.31086 
+              1         2.27423         3.13792         5.34762 
+              2         7.88477         3.02382         2.86104 
+              3         4.89944         3.22566         3.81266 
+              4         7.49226         2.52953         2.96316 
+              5         1.80838         4.42005         5.80604 
+              6         4.97708         4.01389         3.78122 
+              7         3.44834         3.86246         4.51512 
+              8         2.73734         4.35262         4.97693 
+              9         3.86854         4.25295         4.28515 
+             10         3.68061         5.94048         4.38475 
+             11         2.75879         5.72638         4.96132 
+             12         4.44015         6.25856         4.00953 
+             13         7.06881         5.81866         3.07952 
+             14         3.83968         5.96248         4.30013 
+             15         8.01589        0.961292         2.82805 
+             16         4.92922         1.44984         3.80054 
+             17         3.29703         1.18826         4.60486 
+             18         2.59944         1.54516         5.08031 
+             19          2.5277         1.56259         5.13629 
+#
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=
+# Internal parameters and options
+#     ALREADY_INFERRED_PARAMETERS_FILENAME   
+#     BETA_ABS_MAX                           25
+#     BETA_ABS_MIN                           1.01
+#     CHARACTERIZATION_MODE                  false
+#     CHARACTERIZATION_NB_GRAPHS             100
+#     CLEAN_RAW_OUTPUT_MODE                  false
+#     CUSTOM_BETA                            false
+#     CUSTOM_INFERRED_COORDINATES            false
+#     CUSTOM_OUTPUT_ROOTNAME_MODE            false
+#     CUSTOM_SEED                            false
+#     EDGELIST_FILENAME:                     /Users/choudhryshuaib/Dropbox/My Mac (Choudhry’s MacBook Pro)/Downloads/pp_edgelist
+#     EXP_CLUST_NB_INTEGRATION_MC_STEPS      600
+#     EXP_DIST_NB_INTEGRATION_STEPS          1000
+#     KAPPA_MAX_NB_ITER_CONV                 500
+#     KAPPA_POST_INFERENCE_MODE              true
+#     MAXIMIZATION_MODE                      true
+#     MIN_NB_ANGLES_TO_TRY                   100
+#     NUMERICAL_CONVERGENCE_THRESHOLD_1      0.01
+#     NUMERICAL_CONVERGENCE_THRESHOLD_2      5e-05
+#     NUMERICAL_CONVERGENCE_THRESHOLD_3      0.5
+#     NUMERICAL_ZERO                         1e-10
+#     QUIET_MODE                             false
+#     REFINE_MODE                            false
+#     ROOTNAME_OUTPUT:                       /Users/choudhryshuaib/Dropbox/My Mac (Choudhry’s MacBook Pro)/Downloads/pp_edgelist
+#     SEED                                   1643306074
+#     VALIDATION_MODE                        false
+#     VERBOSE_MODE                           false
+#     VERSION                                0.9
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=

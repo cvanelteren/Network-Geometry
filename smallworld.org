@@ -1,0 +1,95 @@
+
+#+begin_src jupyter-python
+import matplotlib.pyplot as plt, pandas as pd
+import numpy as np, os, sys, networkx as nx, warnings
+import mercator
+from itertools import product
+from tqdm import tqdm
+from pathlib import Path
+
+# fn = "./test_watts.inf_coord"
+# with open(fn) as f:
+#     for i in range(8):
+#         sline=next(f).strip().split()
+#     beta=float(next(f).strip().split()[3])
+#     mu=float(next(f).strip().split()[3])
+#     R=float(next(f).strip().split()[3])
+
+def hyp_dist(x, y, mu, R):
+    da = np.pi - np.fabs( np.pi - np.fabs( x.theta.iloc[0] - y.theta.iloc[0] ) )
+    return (R * da) / (mu * x.kappa.iloc[0] * y.kappa)
+
+def jaccard(a, b):
+    return len(a.intersection(b)) / (len(a.union(b)))
+
+def ang_diff(x, y, c = 2 * np.pi):
+    return c - np.fabs(np.mod(np.fabs(x.theta.iloc[0] - y.theta.iloc[0]), 2*c) - c)
+
+def ang(x, y):
+    delta = x.theta.iloc[0] - y.theta.iloc[0]
+    delta /= np.pi * 2
+    delta = delta * 2 - 1
+    return 1 - np.arccos(delta)
+
+
+def load_inf(fn):
+    fn = "./" + str(fn.stem) + ".inf_coord"
+    data = {}
+    for idx, label in enumerate("name kappa theta rad".split()):
+        data[label] = pd.Series(np.loadtxt(fn, usecols=[idx]))
+    data = pd.DataFrame(data)
+    data.convert_dtypes()
+    return data
+
+def load_edges(g, data):
+    tmp = {}
+    for k, v in g.edges():
+        x, y = data[data.name == int(k)], data[data.name == int(v)]
+        # d = hyp_dist(x, y, R, mu)
+        d = ang(x, y)
+        a, b = set(g.neighbors(k)), set(g.neighbors(v))
+        j = jaccard(a, b)
+        h = dict(a  =k, b = v, angular = d, jaccard = j)
+        tmp.append(h)
+    return tmp
+
+def load_graphs(path: str):
+    p = Path(path)
+    data = {}
+    for fn in tqdm(p.iterdir()):
+        if fn.suffix == ".edge":
+            print(f"Reading {fn}")
+            g = nx.read_edgelist(fn)
+            print(len(g))
+            # data = load_inf(fn)
+            # edge = load_edges(g, data)
+            edge = []
+            data[fn.stem] = dict(g = g, data = data, edge = edge)
+    print("loaded data")
+    return data
+graphs = load_graphs("./")
+#+end_src
+
+#+RESULTS:
+: 36it [00:14, 357.48it/s]
+#+RESULTS:
+
+
+
+#+begin_src jupyter-python
+
+#+end_src
+
+#+RESULTS:
+
+#+begin_src jupyter-python
+fig, ax = plt.subplots()
+ax.scatter(edges.jaccard, edges.angular)#(edges.angular - edges.angular.min()) / (edges.angular.max() - edges.angular.min()))
+ax.set_xlabel("Jaccard score")
+ax.set_ylabel("angular difference")
+fig.show()
+#+end_src
+
+#+RESULTS:
+[[file:./.ob-jupyter/63bf3259b7c3c33bd1611f53056cb1a0aaa3c14a.png]]
+#+RESULTS:

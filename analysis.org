@@ -1,0 +1,647 @@
+
+#+begin_src jupyter-python
+import matplotlib.pyplot as plt, cmasher as cmr, pandas as pd
+import numpy as np, os, sys, networkx as nx, warnings
+from plexsim import models
+from imi import infcy
+warnings.simplefilter("ignore"); plt.style.use("fivethirtyeight spooky".split())
+
+data = pd.read_csv("./data/Table_S6.csv")
+trading = pd.read_csv("./data/Database_S1.csv")
+#+end_src
+
+#+RESULTS:
+
+#+begin_src jupyter-python
+data.head()
+trading.head()
+#+end_src
+
+#+RESULTS:
+#+begin_example
+   Country A  Country B  Year         Name of country A Name of country B  \
+0          2         20  1997  United States of America            Canada
+1          2         20  1998  United States of America            Canada
+2          2         20  1999  United States of America            Canada
+3          2         20  2000  United States of America            Canada
+4          2         20  2001  United States of America            Canada
+
+   Imports of country A from country B (in current US Million $)  \
+0                                           171440.0
+1                                           178048.0
+2                                           198828.0
+3                                           229191.0
+4                                           220138.0
+
+   Imports of country B from country A (in current US Million $)
+0                                           145143.0
+1                                           149054.0
+2                                           157847.0
+3                                           169068.0
+4                                           155205.0
+#+end_example
+
+
+#+begin_src jupyter-python
+def parse_mapping(fn: str):
+    mapper = {}
+    with open(fn, "r") as f:
+        for line in f.readlines():
+            data = line.rstrip().split("  ")
+            # year
+            if len(data) == 1:
+                year = data[0]
+            else:
+                idx, label, community = data
+                mapper[label] = int(idx)
+    return mapper
+country_mapper = parse_mapping("./data/Table_S7.csv")
+#+end_src
+
+#+RESULTS:
+
+
+#+begin_src jupyter-python
+def get_country_map(data: pd.DataFrame):
+    mapping = {}
+    x, xx = "Name of country A-Country A".split("-")
+    y, yy = "Name of country B-Country B".split("-")
+    for idx, row in data.iterrows():
+        mapping[row[x]] = row[xx]
+        mapping[row[y]] = row[yy]
+    return mapping
+country_mapper = get_country_map(trading)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src jupyter-python
+idx_mapper = {i: idx for idx, i in enumerate(country_mapper.values())}
+print(idx_mapper)
+#+end_src
+
+#+RESULTS:
+: {2: 0, 20: 1, 31: 2, 40: 3, 41: 4, 42: 5, 51: 6, 52: 7, 53: 8, 54: 9, 55: 10, 56: 11, 57: 12, 58: 13, 60: 14, 70: 15, 80: 16, 90: 17, 91: 18, 92: 19, 93: 20, 94: 21, 95: 22, 100: 23, 101: 24, 110: 25, 115: 26, 130: 27, 135: 28, 140: 29, 145: 30, 150: 31, 155: 32, 160: 33, 165: 34, 200: 35, 205: 36, 210: 37, 211: 38, 212: 39, 220: 40, 225: 41, 230: 42, 235: 43, 255: 44, 290: 45, 305: 46, 310: 47, 316: 48, 317: 49, 325: 50, 338: 51, 339: 52, 341: 53, 343: 54, 344: 55, 345: 56, 346: 57, 347: 58, 349: 59, 350: 60, 352: 61, 355: 62, 359: 63, 360: 64, 365: 65, 366: 66, 367: 67, 368: 68, 369: 69, 370: 70, 371: 71, 372: 72, 373: 73, 375: 74, 380: 75, 385: 76, 390: 77, 395: 78, 402: 79, 403: 80, 404: 81, 411: 82, 420: 83, 432: 84, 433: 85, 434: 86, 435: 87, 436: 88, 437: 89, 438: 90, 439: 91, 450: 92, 451: 93, 452: 94, 461: 95, 471: 96, 475: 97, 481: 98, 482: 99, 483: 100, 484: 101, 490: 102, 500: 103, 501: 104, 510: 105, 516: 106, 517: 107, 520: 108, 522: 109, 530: 110, 531: 111, 540: 112, 541: 113, 551: 114, 552: 115, 553: 116, 560: 117, 565: 118, 570: 119, 571: 120, 572: 121, 580: 122, 581: 123, 590: 124, 591: 125, 600: 126, 615: 127, 616: 128, 620: 129, 625: 130, 626: 131, 630: 132, 640: 133, 645: 134, 651: 135, 652: 136, 660: 137, 663: 138, 666: 139, 670: 140, 679: 141, 690: 142, 692: 143, 694: 144, 696: 145, 698: 146, 700: 147, 701: 148, 702: 149, 703: 150, 704: 151, 705: 152, 710: 153, 712: 154, 713: 155, 731: 156, 732: 157, 740: 158, 750: 159, 760: 160, 770: 161, 771: 162, 775: 163, 780: 164, 781: 165, 790: 166, 800: 167, 811: 168, 812: 169, 816: 170, 820: 171, 830: 172, 835: 173, 840: 174, 850: 175, 860: 176, 900: 177, 910: 178, 920: 179, 935: 180, 940: 181, 946: 182, 947: 183, 950: 184, 955: 185, 970: 186, 990: 187, 986: 188, 221: 189, 223: 190, 232: 191, 331: 192, 983: 193, 987: 194}
+
+
+
+#+begin_src jupyter-python
+from tqdm import tqdm
+def get_graphs(data: pd.DataFrame) -> dict:
+    graphs = {}
+    x, y = "Country A\tCountry B".split("\t")
+    for year, edges in tqdm(data.groupby("Year")):
+        e = np.stack((edges[x], edges[y])).T
+        g = nx.from_edgelist(e)
+        for idx, ei in enumerate(e):
+            u, v = ei
+            g[u][v]["p"] = edges.iloc[idx]['Connection probability']
+            g[u][v]["dtheta"] = edges.iloc[idx]["Normalized angular distance"]
+            g[u][v]["dR"] = edges.iloc[idx]["Normalized hyperbolic distance"]
+        graphs[year] = g
+    print("done")
+    return graphs
+
+def get_backbone_weight(fn: str, graphs: dict) -> dict:
+    weights = {}
+    with open(fn, "r") as f:
+        for line in tqdm(f.readlines()):
+            data = line.rstrip().split("  ")
+            if len(data) == 1:
+                year = str(data[0])
+                weights[year] = {}
+            elif len(data) > 2:
+                a, b, w = data
+                a, b = int(a), int(b)
+                g = weights.get(year)
+                g[(a,b)] = w
+                weights[year] = g
+    for k, v in weights.items():
+        if k:
+            k = k.rstrip("\n").lstrip()
+            k = int(k)
+            g = graphs.get(k)
+            nx.set_edge_attributes(g, v, "weight")
+            graphs[k] = g
+    return graphs
+
+import pickle
+with open("graphs.pkl", 'rb') as f:
+    graphs = pickle.load(f)
+    # pickle.load(f)
+    # pickle.dump(graphs, f)
+
+# with open("graphs.pkl", 'wb') as f:
+    # pickle.dump(graphs, f)
+
+# graphs = get_graphs(data)
+graphs = get_backbone_weight("./data/Table_S3.csv", graphs)
+print("done")
+#+end_src
+
+#+RESULTS:
+: 100% 29822/29822 [00:00<00:00, 522398.33it/s]done
+
+
+
+
+#+begin_src jupyter-python
+def plot_weight_theta(g, ax):
+    w = nx.get_edge_attributes(g, "weight")
+    dtheta = np.zeros(len(w))
+
+    dR = np.zeros(len(w))
+    p = np.zeros(len(w))
+    if w:
+        for idx, ((i, j), wij) in enumerate(w.items()):
+            dtheta[idx] = g[i][j]['dtheta']
+            dR[idx] = g[i][j]['dR']
+            p[idx] = g[i][j]['p']
+        weights = np.asarray([float(i['weight']) for i in w.values()])
+        # weights /= weights.sum()
+        weights = (weights - weights.min()) / (weights.max() - weights.min())
+        h = - (p * np.log(p) + (1 - p) * np.log(1 - p))
+        idx = np.argsort(dtheta)
+        tmp = idx[:20]
+        ax.scatter(weights[tmp], dtheta[tmp],# dR[tmp],
+                   # weights[tmp],
+                   # label = year,
+                   s = h[tmp] * 100,
+                   alpha = 1)
+        # ax.hist2d(weights, dtheta, bins = 20)
+        tmp = idx[-20:]
+        ax.scatter(weights[tmp], dtheta[tmp],# dR[tmp],
+                   # weights[tmp],
+                   # label = year,
+                   s = h[tmp] * 100,
+                   alpha = 1)
+
+
+fig, ax = plt.subplots()#subplot_kw = dict(projection = '3d'))
+plot_weight_theta(graphs[2013], ax)
+# plot_weight_theta(graphs[1973], ax)
+# plot_weight_theta(graphs[1989], ax)
+# plot_weight_theta(graphs[1900], ax)
+
+
+# for year, g in graphs.items():
+#     plot_weight_theta(g, ax)
+
+# ax.set_yscale("symlog")
+ax.set_xscale('log')
+# xl = "weight"
+# yl = "dtheta"
+# ax.set_xlabel(xl)
+# ax.set_ylabel(yl)
+fig.show()
+
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+# [goto error]
+#+begin_example
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mTypeError[0m                                 Traceback (most recent call last)
+Input [0;32mIn [6][0m, in [0;36m<module>[0;34m[0m
+[1;32m     25[0m         ax[38;5;241m.[39mscatter(weights[tmp], dtheta[tmp],[38;5;66;03m# dR[tmp],[39;00m
+[1;32m     26[0m                    [38;5;66;03m# weights[tmp],[39;00m
+[1;32m     27[0m                    [38;5;66;03m# label = year,[39;00m
+[1;32m     28[0m                    s [38;5;241m=[39m h[tmp] [38;5;241m*[39m [38;5;241m100[39m,
+[1;32m     29[0m                    alpha [38;5;241m=[39m [38;5;241m1[39m)
+[1;32m     32[0m fig, ax [38;5;241m=[39m plt[38;5;241m.[39msubplots()[38;5;66;03m#subplot_kw = dict(projection = '3d'))[39;00m
+[0;32m---> 33[0m [43mplot_weight_theta[49m[43m([49m[43mgraphs[49m[43m[[49m[38;5;241;43m2013[39;49m[43m][49m[43m,[49m[43m [49m[43max[49m[43m)[49m
+[1;32m     34[0m [38;5;66;03m# plot_weight_theta(graphs[1973], ax)[39;00m
+[1;32m     35[0m [38;5;66;03m# plot_weight_theta(graphs[1989], ax)[39;00m
+[1;32m     36[0m [38;5;66;03m# plot_weight_theta(graphs[1900], ax)[39;00m
+[0;32m   (...)[0m
+[1;32m     41[0m
+[1;32m     42[0m [38;5;66;03m# ax.set_yscale("symlog")[39;00m
+[1;32m     43[0m ax[38;5;241m.[39mset_xscale([38;5;124m'[39m[38;5;124mlog[39m[38;5;124m'[39m)
+
+Input [0;32mIn [6][0m, in [0;36mplot_weight_theta[0;34m(g, ax)[0m
+[1;32m     10[0m     dR[idx] [38;5;241m=[39m g[i][j][[38;5;124m'[39m[38;5;124mdR[39m[38;5;124m'[39m]
+[1;32m     11[0m     p[idx] [38;5;241m=[39m g[i][j][[38;5;124m'[39m[38;5;124mp[39m[38;5;124m'[39m]
+[0;32m---> 12[0m weights [38;5;241m=[39m np[38;5;241m.[39masarray([[38;5;28mfloat[39m(i[[38;5;124m'[39m[38;5;124mweight[39m[38;5;124m'[39m]) [38;5;28;01mfor[39;00m i [38;5;129;01min[39;00m w[38;5;241m.[39mvalues()])
+[1;32m     13[0m [38;5;66;03m# weights /= weights.sum()[39;00m
+[1;32m     14[0m weights [38;5;241m=[39m (weights [38;5;241m-[39m weights[38;5;241m.[39mmin()) [38;5;241m/[39m (weights[38;5;241m.[39mmax() [38;5;241m-[39m weights[38;5;241m.[39mmin())
+
+Input [0;32mIn [6][0m, in [0;36m<listcomp>[0;34m(.0)[0m
+[1;32m     10[0m     dR[idx] [38;5;241m=[39m g[i][j][[38;5;124m'[39m[38;5;124mdR[39m[38;5;124m'[39m]
+[1;32m     11[0m     p[idx] [38;5;241m=[39m g[i][j][[38;5;124m'[39m[38;5;124mp[39m[38;5;124m'[39m]
+[0;32m---> 12[0m weights [38;5;241m=[39m np[38;5;241m.[39masarray([[38;5;28mfloat[39m([43mi[49m[43m[[49m[38;5;124;43m'[39;49m[38;5;124;43mweight[39;49m[38;5;124;43m'[39;49m[43m][49m) [38;5;28;01mfor[39;00m i [38;5;129;01min[39;00m w[38;5;241m.[39mvalues()])
+[1;32m     13[0m [38;5;66;03m# weights /= weights.sum()[39;00m
+[1;32m     14[0m weights [38;5;241m=[39m (weights [38;5;241m-[39m weights[38;5;241m.[39mmin()) [38;5;241m/[39m (weights[38;5;241m.[39mmax() [38;5;241m-[39m weights[38;5;241m.[39mmin())
+
+[0;31mTypeError[0m: string indices must be integers
+#+end_example
+[[file:./.ob-jupyter/70d5679e011c7e3526c59215c682ff4670e34f52.png]]
+:END:
+
+#+begin_src jupyter-python
+def compute_entropy(g: nx.Graph, mapper: dict) -> np.ndarray:
+    n = len(mapper)
+    A = np.zeros((n, n))
+    for i, j in tqdm(g.edges()):
+        i, j = int(i), int(j)
+        p = dict(g[i][j]).get("weight", 1)
+        H = float(p)
+        # H = - (p * np.log(p) + (1 - p) * np.log(1-p))
+        # if np.isnan(H):
+        #     H = 0
+        try:
+            A[mapper[i], mapper[j]] = H
+        except: continue
+    print("done")
+    return (A + A.T)/2
+
+entropies = {year: compute_entropy(g, idx_mapper) for year, g in tqdm(graphs.items())}
+#+end_src
+
+#+RESULTS:
+#+begin_example
+  0% 0/129 [00:00<?, ?it/s]
+100% 276/276 [00:00<00:00, 145760.25it/s]
+done
+100% 276/276 [00:00<00:00, 155930.48it/s]
+done
+100% 253/253 [00:00<00:00, 178016.93it/s]
+done
+100% 325/325 [00:00<00:00, 134036.26it/s]
+done
+100% 325/325 [00:00<00:00, 180693.11it/s]
+done
+
+100% 300/300 [00:00<00:00, 190477.02it/s]
+done
+
+100% 351/351 [00:00<00:00, 130122.04it/s]
+done
+
+100% 351/351 [00:00<00:00, 180993.45it/s]
+done
+
+100% 465/465 [00:00<00:00, 191285.93it/s]
+done
+
+100% 378/378 [00:00<00:00, 147401.16it/s]
+done
+
+100% 406/406 [00:00<00:00, 129261.23it/s]
+done
+
+100% 378/378 [00:00<00:00, 114134.83it/s]
+  9% 12/129 [00:00<00:00, 117.77it/s]done
+
+100% 351/351 [00:00<00:00, 141055.93it/s]
+done
+
+100% 406/406 [00:00<00:00, 166557.85it/s]
+done
+
+100% 378/378 [00:00<00:00, 133410.21it/s]
+done
+
+100% 378/378 [00:00<00:00, 133466.36it/s]
+done
+
+100% 406/406 [00:00<00:00, 123245.81it/s]
+done
+
+100% 406/406 [00:00<00:00, 122589.26it/s]
+done
+
+100% 406/406 [00:00<00:00, 121922.20it/s]
+done
+
+100% 406/406 [00:00<00:00, 123954.54it/s]
+done
+
+100% 465/465 [00:00<00:00, 126720.25it/s]
+done
+
+100% 465/465 [00:00<00:00, 125861.60it/s]
+done
+
+100% 435/435 [00:00<00:00, 126483.34it/s]
+done
+
+100% 465/465 [00:00<00:00, 124790.54it/s]
+done
+
+100% 300/300 [00:00<00:00, 123361.88it/s]
+done
+
+100% 378/378 [00:00<00:00, 121257.89it/s]
+ 20% 26/129 [00:00<00:00, 125.77it/s]done
+
+100% 465/465 [00:00<00:00, 124710.75it/s]
+done
+
+100% 496/496 [00:00<00:00, 125854.49it/s]
+done
+
+100% 561/561 [00:00<00:00, 125775.31it/s]
+done
+
+100% 561/561 [00:00<00:00, 125687.97it/s]
+done
+
+100% 406/406 [00:00<00:00, 123630.57it/s]
+done
+
+100% 378/378 [00:00<00:00, 121966.84it/s]
+done
+
+100% 378/378 [00:00<00:00, 120082.32it/s]
+done
+
+100% 406/406 [00:00<00:00, 119350.11it/s]
+done
+
+100% 406/406 [00:00<00:00, 121556.67it/s]
+done
+
+100% 561/561 [00:00<00:00, 123972.84it/s]
+done
+
+100% 496/496 [00:00<00:00, 124031.17it/s]
+done
+
+100% 465/465 [00:00<00:00, 116113.08it/s]
+done
+
+100% 465/465 [00:00<00:00, 119874.08it/s]
+ 30% 39/129 [00:00<00:00, 116.72it/s]done
+
+100% 496/496 [00:00<00:00, 118169.54it/s]
+done
+
+100% 666/666 [00:00<00:00, 109211.29it/s]
+done
+
+100% 703/703 [00:00<00:00, 123708.65it/s]
+done
+
+100% 820/820 [00:00<00:00, 123926.40it/s]
+done
+
+100% 820/820 [00:00<00:00, 125198.55it/s]
+done
+
+100% 1225/1225 [00:00<00:00, 126852.22it/s]
+done
+
+100% 1326/1326 [00:00<00:00, 124558.18it/s]
+done
+
+100% 1378/1378 [00:00<00:00, 119675.97it/s]
+done
+
+100% 1431/1431 [00:00<00:00, 125613.18it/s]
+done
+
+100% 1431/1431 [00:00<00:00, 123035.67it/s]
+done
+
+100% 1275/1275 [00:00<00:00, 129025.93it/s]
+done
+
+100% 1378/1378 [00:00<00:00, 127732.12it/s]
+done
+ 40% 51/129 [00:00<00:00, 93.41it/s]
+100% 1485/1485 [00:00<00:00, 129440.38it/s]
+done
+
+100% 1540/1540 [00:00<00:00, 120875.58it/s]
+done
+
+100% 1540/1540 [00:00<00:00, 204587.23it/s]
+done
+
+100% 1035/1035 [00:00<00:00, 189352.90it/s]
+done
+
+100% 1596/1596 [00:00<00:00, 204269.30it/s]
+done
+
+100% 1596/1596 [00:00<00:00, 200801.19it/s]
+done
+
+100% 1540/1540 [00:00<00:00, 165337.19it/s]
+done
+
+100% 1596/1596 [00:00<00:00, 214857.79it/s]
+done
+
+100% 1378/1378 [00:00<00:00, 198575.93it/s]
+done
+
+100% 1711/1711 [00:00<00:00, 199179.97it/s]
+ 47% 61/129 [00:00<00:00, 86.01it/s]done
+
+100% 1770/1770 [00:00<00:00, 196660.08it/s]
+done
+
+100% 1540/1540 [00:00<00:00, 195514.97it/s]
+done
+
+100% 1830/1830 [00:00<00:00, 199158.70it/s]
+done
+
+100% 1891/1891 [00:00<00:00, 199152.03it/s]
+done
+
+100% 2016/2016 [00:00<00:00, 201609.81it/s]
+done
+
+100% 2080/2080 [00:00<00:00, 200532.18it/s]
+done
+
+100% 2211/2211 [00:00<00:00, 196383.17it/s]
+done
+
+100% 2346/2346 [00:00<00:00, 199429.21it/s]
+done
+
+100% 2415/2415 [00:00<00:00, 205924.99it/s]
+ 54% 70/129 [00:00<00:00, 79.03it/s]done
+
+100% 3003/3003 [00:00<00:00, 215094.35it/s]
+done
+
+100% 3160/3160 [00:00<00:00, 214493.80it/s]
+done
+
+100% 3321/3321 [00:00<00:00, 213763.91it/s]
+done
+
+100% 3240/3240 [00:00<00:00, 197324.56it/s]
+done
+
+100% 3403/3403 [00:00<00:00, 199753.92it/s]
+done
+
+100% 4753/4753 [00:00<00:00, 196275.70it/s]
+done
+
+100% 5565/5565 [00:00<00:00, 199416.49it/s]
+done
+
+100% 5778/5778 [00:00<00:00, 198555.48it/s]
+done
+
+100% 5778/5778 [00:00<00:00, 204226.05it/s]
+ 61% 79/129 [00:01<00:00, 60.59it/s]done
+
+100% 6903/6903 [00:00<00:00, 200298.03it/s]
+done
+
+100% 7260/7260 [00:00<00:00, 211392.36it/s]
+done
+
+100% 7750/7750 [00:00<00:00, 225198.70it/s]
+done
+
+100% 7750/7750 [00:00<00:00, 225862.16it/s]
+done
+
+100% 8001/8001 [00:00<00:00, 222918.70it/s]
+done
+
+100% 8515/8515 [00:00<00:00, 225044.10it/s]
+done
+
+100% 8515/8515 [00:00<00:00, 225851.02it/s]
+ 67% 86/129 [00:01<00:00, 44.93it/s]done
+
+100% 9180/9180 [00:00<00:00, 227293.29it/s]
+done
+
+100% 9316/9316 [00:00<00:00, 228208.78it/s]
+done
+
+100% 9453/9453 [00:00<00:00, 228442.77it/s]
+done
+
+100% 9870/9870 [00:00<00:00, 223710.11it/s]
+done
+
+100% 10731/10731 [00:00<00:00, 227145.34it/s]
+done
+
+100% 11026/11026 [00:00<00:00, 229475.35it/s]
+ 71% 92/129 [00:01<00:01, 35.47it/s]done
+
+100% 11175/11175 [00:00<00:00, 229974.57it/s]
+done
+
+100% 10878/10878 [00:00<00:00, 233899.67it/s]
+done
+
+100% 11628/11628 [00:00<00:00, 229143.53it/s]
+done
+
+100% 11935/11935 [00:00<00:00, 226748.40it/s]
+done
+
+100% 12090/12090 [00:00<00:00, 231277.16it/s]
+ 75% 97/129 [00:01<00:01, 29.51it/s]done
+
+100% 12246/12246 [00:00<00:00, 225688.08it/s]
+done
+
+100% 12403/12403 [00:00<00:00, 229331.22it/s]
+done
+
+100% 12720/12720 [00:00<00:00, 229493.70it/s]
+done
+
+100% 12561/12561 [00:00<00:00, 231151.10it/s]
+ 78% 101/129 [00:02<00:01, 25.76it/s]done
+
+100% 12720/12720 [00:00<00:00, 230397.55it/s]
+done
+
+100% 12561/12561 [00:00<00:00, 228277.64it/s]
+done
+
+100% 12880/12880 [00:00<00:00, 227818.65it/s]
+ 81% 104/129 [00:02<00:01, 23.52it/s]done
+
+100% 12720/12720 [00:00<00:00, 226266.26it/s]
+done
+
+100% 12561/12561 [00:00<00:00, 233649.33it/s]
+done
+
+100% 12246/12246 [00:00<00:00, 227508.46it/s]
+ 83% 107/129 [00:02<00:01, 21.80it/s]done
+
+100% 14535/14535 [00:00<00:00, 229838.52it/s]
+done
+
+100% 15753/15753 [00:00<00:00, 227618.50it/s]
+done
+
+100% 15931/15931 [00:00<00:00, 229962.30it/s]
+ 85% 110/129 [00:02<00:00, 19.36it/s]done
+
+100% 15931/15931 [00:00<00:00, 230639.38it/s]
+done
+
+100% 16110/16110 [00:00<00:00, 231723.15it/s]
+done
+
+100% 16110/16110 [00:00<00:00, 226098.58it/s]
+ 88% 113/129 [00:02<00:00, 17.50it/s]done
+
+100% 16110/16110 [00:00<00:00, 227132.96it/s]
+done
+
+100% 16653/16653 [00:00<00:00, 229697.34it/s]
+ 89% 115/129 [00:03<00:00, 16.47it/s]done
+
+100% 16836/16836 [00:00<00:00, 226010.91it/s]
+done
+
+100% 16836/16836 [00:00<00:00, 231701.07it/s]
+ 91% 117/129 [00:03<00:00, 15.53it/s]done
+
+100% 17020/17020 [00:00<00:00, 232248.94it/s]
+done
+
+100% 17020/17020 [00:00<00:00, 228421.76it/s]
+ 92% 119/129 [00:03<00:00, 14.76it/s]done
+
+100% 17020/17020 [00:00<00:00, 225308.76it/s]
+done
+
+100% 17205/17205 [00:00<00:00, 229524.62it/s]
+ 94% 121/129 [00:03<00:00, 14.13it/s]done
+
+100% 16836/16836 [00:00<00:00, 227210.81it/s]
+done
+
+100% 17205/17205 [00:00<00:00, 226761.52it/s]
+ 95% 123/129 [00:03<00:00, 13.68it/s]done
+
+100% 17205/17205 [00:00<00:00, 226207.79it/s]
+done
+
+100% 17205/17205 [00:00<00:00, 225830.48it/s]
+ 97% 125/129 [00:03<00:00, 13.30it/s]done
+
+100% 17391/17391 [00:00<00:00, 231617.73it/s]
+done
+
+100% 17205/17205 [00:00<00:00, 230118.95it/s]
+ 98% 127/129 [00:03<00:00, 13.09it/s]done
+
+100% 17205/17205 [00:00<00:00, 231542.51it/s]
+done
+
+100% 17766/17766 [00:00<00:00, 231173.50it/s]
+100% 129/129 [00:04<00:00, 31.04it/s]done
+
+#+end_example

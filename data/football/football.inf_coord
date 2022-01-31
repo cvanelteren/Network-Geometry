@@ -1,0 +1,162 @@
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=
+# Embedding started at:  2022/01/27 14:00 UTC
+# Ended at:              2022/01/27 14:00 UTC
+# Elapsed CPU time:      2.23742 seconds
+# Edgelist file:         /Users/choudhryshuaib/Dropbox/My Mac (Choudhry’s MacBook Pro)/Downloads/football/football_edgelist
+#
+# Parameters
+#   - nb. vertices:      115
+#   - beta:              37.2195
+#   - mu:                0.0467753
+#   - radius_S1:         18.3028
+#   - radius_H2:         5.79842
+#   - kappa_min:         6.56463
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=
+#              Vertex       Inf.Kappa       Inf.Theta    Inf.Hyp.Rad. 
+                 Army          11.827         4.81316         4.62104 
+                 Duke         11.0631         3.27769         4.75458 
+                 Iowa         13.4899         1.71967         4.35793 
+                 Kent         10.0552         2.30922         4.94563 
+                 Navy         14.0794         3.56427         4.27239 
+                 Ohio         10.9855         2.32853         4.76867 
+                 Rice         14.4512         5.84418         4.22025 
+                 UCLA         8.28106          1.4427         5.33387 
+                 Utah         11.3568         6.21563         4.70218 
+                Akron         9.17929         2.50158         5.12792 
+                Idaho          11.581         5.30575         4.66308 
+                Texas         16.0973         5.72964         4.00451 
+                Tulsa         14.0803        0.537698         4.27226 
+               Auburn         7.29581         4.40545         5.58721 
+               Baylor         10.3555          5.4746         4.88679 
+               Hawaii         13.9917        0.513175         4.28488 
+               Kansas         10.2144        0.951665         4.91421 
+               Nevada         15.1711        0.434155         4.12303 
+               Oregon         8.71248         1.42396          5.2323 
+               Purdue         9.59399         2.06632         5.03954 
+               Temple         12.4037         2.91241         4.52583 
+               Toledo         6.84455         2.60851         5.71491 
+               Tulane         12.4443          4.8844         4.51929 
+              Alabama         11.8151         4.40472         4.62306 
+              Arizona         8.72999         1.50693         5.22829 
+              Buffalo          8.8288         2.50414         5.20578 
+              Clemson         10.0695         3.25414         4.94279 
+              Florida         9.35607         4.10573         5.08976 
+              Georgia         8.49911         4.10037         5.28189 
+              Houston         11.0714         4.76065         4.75308 
+              Indiana         9.20909          2.1045         5.12143 
+              Memphis         11.8522         4.73188         4.61678 
+              Rutgers         13.6968         2.91039         4.32748 
+              Wyoming         11.2105       0.0239771         4.72812 
+             AirForce         11.0226         6.20468         4.76192 
+             Arkansas          11.351           4.426         4.70321 
+             Colorado         10.3635        0.957741         4.88523 
+             Illinois         13.2879         1.73869         4.38811 
+             Kentucky         9.89958         4.07464         4.97683 
+             Marshall         11.7723         2.37994         4.63032 
+             Maryland         10.7955         3.25867         4.80355 
+             Michigan         10.9602         1.96404         4.77328 
+             Missouri          12.532        0.977829         4.50524 
+             Nebraska         13.1664        0.952612         4.40647 
+             Oklahoma         14.2976          5.8397         4.24163 
+             Stanford         8.97855         1.29694         5.17214 
+             Syracuse         16.1873         2.88477         3.99336 
+             TexasA&M         8.91206        0.163833           5.187 
+             Virginia         9.79058         3.25273         4.99897 
+            BallState         6.77056         2.60775         5.73665 
+            IowaState         12.1809        0.944199         4.56208 
+            MiamiOhio         8.50352         2.54385         5.28085 
+            Minnesota         9.84291         2.08219         4.98831 
+            NewMexico         11.6832         6.19153          4.6455 
+            NotreDame         11.8455         1.65458         4.61792 
+            OhioState         11.7441         1.89615          4.6351 
+            PennState         14.7468         1.87739         4.17976 
+            Tennessee         12.5721         4.12167         4.49886 
+            TexasTech         17.8884         5.64363          3.7935 
+            UtahState         11.5931         5.30974           4.661 
+            Wisconsin         10.0925         2.05481         4.93822 
+           BoiseState         12.0206         5.15058         4.58857 
+           California         8.68619         1.30991         5.23835 
+           Cincinnati         11.8116         4.82352         4.62366 
+           Louisville         7.40757         4.65734         5.55681 
+           NorthTexas         13.0103         5.36265         4.43033 
+           Pittsburgh         11.0586          2.7903          4.7554 
+           Vanderbilt         10.3814         4.10162         4.88178 
+           WakeForest         7.40916         3.21923         5.55638 
+           Washington         8.91555          1.2994         5.18622 
+          Connecticut         6.56463         2.65244         5.79842 
+          FresnoState         13.7384        0.494536         4.32143 
+          GeorgiaTech         8.60972         3.19585         5.25603 
+          KansasState         13.3954         1.00385         4.37199 
+          Mississippi         11.2907         4.42031         4.71386 
+          OregonState         7.50947         1.45694         5.52949 
+          TexasElPaso         14.2647        0.339059         4.24624 
+         ArizonaState         9.10714         1.29298          5.1437 
+         BrighamYoung         12.0403         6.18342          4.5853 
+         EastCarolina         10.5134         4.73842         4.85651 
+         FloridaState         11.8875         3.28148         4.61084 
+         MiamiFlorida         11.6532         2.87678         4.65065 
+         Northwestern         9.69414         2.04903         5.01877 
+         SanJoseState         10.0889        0.758819         4.93894 
+         VirginiaTech         13.1388         2.91244         4.41067 
+         WestVirginia         14.5866         2.91697         4.20161 
+        ArkansasState         12.6997         5.17891         4.47866 
+        BostonCollege         13.5394         2.87387          4.3506 
+        ColoradoState         10.7651         6.25318          4.8092 
+        LouisianaTech          14.556         3.77349          4.2058 
+        MichiganState         13.1312         1.81083         4.41184 
+        NorthCarolina         11.2837         3.26897         4.71509 
+        OklahomaState         15.7895         5.69348         4.04312 
+        SanDiegoState         10.9827         6.23709         4.76917 
+        SouthCarolina         10.1243         4.13966         4.93193 
+       CentralFlorida         14.9205         3.72582         4.15634 
+       LouisianaState          11.974         4.42667         4.59635 
+       NevadaLasVegas         11.5057         6.23959         4.67613 
+       NewMexicoState          13.291         5.20472         4.38765 
+       TexasChristian         13.4026        0.530605         4.37091 
+      CentralMichigan         10.2464         2.27476         4.90797 
+      EasternMichigan         8.19065          2.6084         5.35583 
+      LouisianaMonroe         13.3304         3.75188         4.38173 
+      WashingtonState         9.65052         1.29799         5.02779 
+      WesternMichigan         12.2345         2.35546          4.5533 
+     MississippiState         10.6322         4.39572         4.83403 
+     NorthernIllinois         8.61778         2.61747         5.25416 
+    AlabamaBirmingham         7.78043         4.67617         5.45859 
+    BowlingGreenState          9.3243         2.46287         5.09657 
+    SouthernMethodist         10.4088        0.229556         4.87651 
+   LouisianaLafayette         9.78985         3.84546         4.99912 
+   NorthCarolinaState          10.211         3.26127         4.91488 
+   SouthernCalifornia           9.845         1.44037         4.98789 
+  SouthernMississippi         8.63703         4.69746          5.2497 
+ MiddleTennesseeState         9.73772         3.85914          5.0098 
+#
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=
+# Internal parameters and options
+#     ALREADY_INFERRED_PARAMETERS_FILENAME   
+#     BETA_ABS_MAX                           25
+#     BETA_ABS_MIN                           1.01
+#     CHARACTERIZATION_MODE                  false
+#     CHARACTERIZATION_NB_GRAPHS             100
+#     CLEAN_RAW_OUTPUT_MODE                  false
+#     CUSTOM_BETA                            false
+#     CUSTOM_INFERRED_COORDINATES            false
+#     CUSTOM_OUTPUT_ROOTNAME_MODE            false
+#     CUSTOM_SEED                            false
+#     EDGELIST_FILENAME:                     /Users/choudhryshuaib/Dropbox/My Mac (Choudhry’s MacBook Pro)/Downloads/football/football_edgelist
+#     EXP_CLUST_NB_INTEGRATION_MC_STEPS      600
+#     EXP_DIST_NB_INTEGRATION_STEPS          1000
+#     KAPPA_MAX_NB_ITER_CONV                 500
+#     KAPPA_POST_INFERENCE_MODE              true
+#     MAXIMIZATION_MODE                      true
+#     MIN_NB_ANGLES_TO_TRY                   100
+#     NUMERICAL_CONVERGENCE_THRESHOLD_1      0.01
+#     NUMERICAL_CONVERGENCE_THRESHOLD_2      5e-05
+#     NUMERICAL_CONVERGENCE_THRESHOLD_3      0.5
+#     NUMERICAL_ZERO                         1e-10
+#     QUIET_MODE                             false
+#     REFINE_MODE                            false
+#     ROOTNAME_OUTPUT:                       /Users/choudhryshuaib/Dropbox/My Mac (Choudhry’s MacBook Pro)/Downloads/football/football_edgelist
+#     SEED                                   1643292037
+#     VALIDATION_MODE                        false
+#     VERBOSE_MODE                           false
+#     VERSION                                0.9
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=

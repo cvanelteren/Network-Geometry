@@ -1,0 +1,126 @@
+
+===========================================================================================
+Mercador: accurate embeddings of graphs in the S1 space
+version: 0.9
+started on: 2022/01/27 16:03 UTC
+edgelist filename: ./watts_trial=1_k=3_p=0.7857142857142857_n=500.edge
+seed: 1643299386
+
+Loading edgelist......................................................................done.
+
+Checking number of connected components...............................................done.
+
+Analyzing degrees.....................................................................done.
+
+Computing local clustering............................................................done.
+
+Ordering vertices.....................................................................done.
+
+Properties of the graph
+    Nb vertices:                    470
+    Nb edges:                       470
+    Average degree:                 2.0000
+    Minimum degree:                 1
+    Maximum degree:                 5
+    Nb of degree class:             5
+    Average clustering:             0.0000
+
+Inferring parameters...
+           beta      avg. clustering 
+         2.0559               0.3145 
+         1.5279               0.1945 
+         1.2640               0.1118 
+         1.1320               0.0661 
+         1.0660               0.0638 
+         1.0330               0.0566 
+         1.0165               0.0467 
+WARNING: value too close to 1, using beta =      1.0082.
+                       ...............................................................done.
+
+Inferred ensemble (random positions)
+    Average degree:                 2.0010
+    Minimum degree:                 1
+    Maximum degree:                 5
+    Average clustering:             0.0467
+    Parameters
+      - beta:                       1.0082
+      - mu:                         0.0041
+      - radius_S1 (R):              74.8028
+
+Finding initial positions/ordering...
+    Building the weights matrix... Matrix built.
+
+    Computing eigenvectors using Spectra parameter ncv = 7... Convergence reached.
+
+    Sum of the angular positions (before adjustment): 9.9075
+                                     .................................................done.
+
+Refining the positions...
+    ...of vertices     [1,23]......done in 0.2207 seconds (14/23 changed position)
+    ...of vertices    [24,46]......done in 0.2200 seconds (15/23 changed position)
+    ...of vertices    [47,69]......done in 0.2194 seconds (12/23 changed position)
+    ...of vertices    [70,92]......done in 0.2191 seconds ( 9/23 changed position)
+    ...of vertices   [93,115]......done in 0.2191 seconds ( 6/23 changed position)
+    ...of vertices  [116,138]......done in 0.2188 seconds ( 4/23 changed position)
+    ...of vertices  [139,161]......done in 0.2292 seconds (11/23 changed position)
+    ...of vertices  [162,184]......done in 0.2224 seconds ( 5/23 changed position)
+    ...of vertices  [185,207]......done in 0.2322 seconds ( 6/23 changed position)
+    ...of vertices  [208,230]......done in 0.2324 seconds ( 5/23 changed position)
+    ...of vertices  [231,253]......done in 0.2265 seconds ( 7/23 changed position)
+    ...of vertices  [254,276]......done in 0.2188 seconds ( 4/23 changed position)
+    ...of vertices  [277,299]......done in 0.2186 seconds ( 6/23 changed position)
+    ...of vertices  [300,322]......done in 0.2184 seconds ( 4/23 changed position)
+    ...of vertices  [323,345]......done in 0.2188 seconds ( 3/23 changed position)
+    ...of vertices  [346,368]......done in 0.2189 seconds ( 6/23 changed position)
+    ...of vertices  [369,391]......done in 0.2191 seconds ( 9/23 changed position)
+    ...of vertices  [392,414]......done in 0.2186 seconds ( 3/23 changed position)
+    ...of vertices  [415,437]......done in 0.2188 seconds ( 4/23 changed position)
+    ...of vertices  [438,460]......done in 0.2189 seconds ( 4/23 changed position)
+    ...of vertices  [461,470]......done in 0.0952 seconds ( 2/10 changed position)
+                         .............................................................done.
+
+Updating values of kappa based on inferred positions...
+    Convergence reached after 14 iterations.
+                                                       ...............................done.
+
+    => Inferred coordinates saved to ./watts_trial=1_k=3_p=0.7857142857142857_n=500.inf_coord
+
+Internal parameters and options
+    ALREADY_INFERRED_PARAMETERS_FILENAME   
+    BETA_ABS_MAX                           25
+    BETA_ABS_MIN                           1.01
+    CHARACTERIZATION_MODE                  false
+    CHARACTERIZATION_NB_GRAPHS             100
+    CLEAN_RAW_OUTPUT_MODE                  false
+    CUSTOM_BETA                            false
+    CUSTOM_CHARACTERIZATION_NB_GRAPHS      false
+    CUSTOM_INFERRED_COORDINATES            false
+    CUSTOM_OUTPUT_ROOTNAME_MODE            false
+    CUSTOM_SEED                            false
+    EDGELIST_FILENAME:                     ./watts_trial=1_k=3_p=0.7857142857142857_n=500.edge
+    EXP_CLUST_NB_INTEGRATION_MC_STEPS      600
+    EXP_DIST_NB_INTEGRATION_STEPS          1000
+    KAPPA_MAX_NB_ITER_CONV                 500
+    KAPPA_POST_INFERENCE_MODE              true
+    MAXIMIZATION_MODE                      true
+    MIN_NB_ANGLES_TO_TRY                   100
+    NUMERICAL_CONVERGENCE_THRESHOLD_1      0.01
+    NUMERICAL_CONVERGENCE_THRESHOLD_2      5e-05
+    NUMERICAL_CONVERGENCE_THRESHOLD_3      0.5
+    NUMERICAL_ZERO                         1e-10
+    QUIET_MODE                             false
+    REFINE_MODE                            false
+    ROOTNAME_OUTPUT:                       ./watts_trial=1_k=3_p=0.7857142857142857_n=500
+    SEED                                   1643299386
+    VALIDATION_MODE                        false
+    VERBOSE_MODE                           false
+    VERSION                                0.9
+
+Ended on: 2022/01/27 16:03 UTC
+Elapsed CPU time (embedding):                5.3792 seconds
+    initialization:                          0.0009 seconds
+    parameters inference:                    0.8029 seconds
+    initial positions:                       0.0190 seconds
+    refining positions:                      4.5251 seconds
+    adjusting kappas:                        0.0313 seconds
+===========================================================================================

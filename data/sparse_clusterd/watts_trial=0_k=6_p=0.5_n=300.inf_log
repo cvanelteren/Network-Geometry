@@ -1,0 +1,122 @@
+
+===========================================================================================
+Mercador: accurate embeddings of graphs in the S1 space
+version: 0.9
+started on: 2022/01/27 20:30 UTC
+edgelist filename: ./watts_trial=0_k=6_p=0.5_n=300.edge
+seed: 1643315416
+
+Loading edgelist......................................................................done.
+
+Checking number of connected components...............................................done.
+
+Analyzing degrees.....................................................................done.
+
+Computing local clustering............................................................done.
+
+Ordering vertices.....................................................................done.
+
+Properties of the graph
+    Nb vertices:                    300
+    Nb edges:                       1453
+    Average degree:                 9.6867
+    Minimum degree:                 4
+    Maximum degree:                 29
+    Nb of degree class:             16
+    Average clustering:             0.7333
+
+Inferring parameters...
+           beta      avg. clustering 
+         2.2809               0.4040 
+         3.4214               0.5542 
+         5.1321               0.6621 
+         7.6982               0.7233 
+        11.5473               0.7385 
+                       ...............................................................done.
+
+Inferred ensemble (random positions)
+    Average degree:                 9.6869
+    Minimum degree:                 4
+    Maximum degree:                 29
+    Average clustering:             0.7385
+    Parameters
+      - beta:                       11.5473
+      - mu:                         0.0510
+      - radius_S1 (R):              47.7465
+
+Finding initial positions/ordering...
+    Building the weights matrix... Matrix built.
+
+    Computing eigenvectors using Spectra parameter ncv = 7... Convergence reached.
+
+    Sum of the angular positions (before adjustment): 19.0957
+                                     .................................................done.
+
+Refining the positions...
+    ...of vertices    [1,15]......done in 0.0853 seconds (13/15 changed position)
+    ...of vertices   [16,30]......done in 0.0845 seconds (12/15 changed position)
+    ...of vertices   [31,45]......done in 0.0847 seconds (11/15 changed position)
+    ...of vertices   [46,60]......done in 0.0848 seconds (13/15 changed position)
+    ...of vertices   [61,75]......done in 0.0846 seconds (11/15 changed position)
+    ...of vertices   [76,90]......done in 0.0845 seconds (13/15 changed position)
+    ...of vertices  [91,105]......done in 0.0817 seconds ( 9/15 changed position)
+    ...of vertices [106,120]......done in 0.0831 seconds (12/15 changed position)
+    ...of vertices [121,135]......done in 0.0842 seconds (14/15 changed position)
+    ...of vertices [136,150]......done in 0.0853 seconds (13/15 changed position)
+    ...of vertices [151,165]......done in 0.0840 seconds (13/15 changed position)
+    ...of vertices [166,180]......done in 0.0845 seconds (10/15 changed position)
+    ...of vertices [181,195]......done in 0.0843 seconds (11/15 changed position)
+    ...of vertices [196,210]......done in 0.0829 seconds (10/15 changed position)
+    ...of vertices [211,225]......done in 0.0822 seconds (10/15 changed position)
+    ...of vertices [226,240]......done in 0.0818 seconds (12/15 changed position)
+    ...of vertices [241,255]......done in 0.0817 seconds (10/15 changed position)
+    ...of vertices [256,270]......done in 0.0787 seconds ( 7/15 changed position)
+    ...of vertices [271,285]......done in 0.0787 seconds (10/15 changed position)
+    ...of vertices [286,300]......done in 0.0739 seconds ( 8/15 changed position)
+                         .............................................................done.
+
+Updating values of kappa based on inferred positions...
+    Convergence reached after 292 iterations.
+                                                       ...............................done.
+
+    => Inferred coordinates saved to ./watts_trial=0_k=6_p=0.5_n=300.inf_coord
+
+Internal parameters and options
+    ALREADY_INFERRED_PARAMETERS_FILENAME   
+    BETA_ABS_MAX                           25
+    BETA_ABS_MIN                           1.01
+    CHARACTERIZATION_MODE                  false
+    CHARACTERIZATION_NB_GRAPHS             100
+    CLEAN_RAW_OUTPUT_MODE                  false
+    CUSTOM_BETA                            false
+    CUSTOM_CHARACTERIZATION_NB_GRAPHS      false
+    CUSTOM_INFERRED_COORDINATES            false
+    CUSTOM_OUTPUT_ROOTNAME_MODE            false
+    CUSTOM_SEED                            false
+    EDGELIST_FILENAME:                     ./watts_trial=0_k=6_p=0.5_n=300.edge
+    EXP_CLUST_NB_INTEGRATION_MC_STEPS      600
+    EXP_DIST_NB_INTEGRATION_STEPS          1000
+    KAPPA_MAX_NB_ITER_CONV                 500
+    KAPPA_POST_INFERENCE_MODE              true
+    MAXIMIZATION_MODE                      true
+    MIN_NB_ANGLES_TO_TRY                   100
+    NUMERICAL_CONVERGENCE_THRESHOLD_1      0.01
+    NUMERICAL_CONVERGENCE_THRESHOLD_2      5e-05
+    NUMERICAL_CONVERGENCE_THRESHOLD_3      0.5
+    NUMERICAL_ZERO                         1e-10
+    QUIET_MODE                             false
+    REFINE_MODE                            false
+    ROOTNAME_OUTPUT:                       ./watts_trial=0_k=6_p=0.5_n=300
+    SEED                                   1643315416
+    VALIDATION_MODE                        false
+    VERBOSE_MODE                           false
+    VERSION                                0.9
+
+Ended on: 2022/01/27 20:30 UTC
+Elapsed CPU time (embedding):                2.9706 seconds
+    initialization:                          0.0031 seconds
+    parameters inference:                    1.0270 seconds
+    initial positions:                       0.0238 seconds
+    refining positions:                      1.6558 seconds
+    adjusting kappas:                        0.2608 seconds
+===========================================================================================
