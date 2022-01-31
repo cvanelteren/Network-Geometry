@@ -1,7 +1,7 @@
 * Abstract
 Recent advanced in data collection has opened the door for network science to be applied to various different field from ecology, psychology to quantum mechanics. The relation between nodes and edges are thought to be the output of a complex dynamical process. Traditionally, the network structure of a complex system is studied by using structural features of the nodes or edges in relation to the rest of the networks. So-called centrality metrics are used to quantify this "centrality". Recent advances in network geometry has provided an alternative view to study network. In this project, we apply network geometry to study the strength of weak ties. By embedding the network in hyperbolic space, the angular difference can be used to compute the strength of weak ties. Initial results shows that network geometry may provide a novel and computational efficient way to study complex networks.
 
-This project was part of the [[Winter Workshop for complex systems 2022][https://wwcs2022.github.io/]].
+This project was part of the [[https://wwcs2022.github.io/][Winter Workshop for complex systems 2022]].
 
 * Credits
 - Szymon Talaga 
